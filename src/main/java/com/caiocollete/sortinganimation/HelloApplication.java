@@ -3,106 +3,235 @@ package com.caiocollete.sortinganimation;
 import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.concurrent.Task;
+import javafx.geometry.Pos;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
+import javafx.scene.control.Label;
 import javafx.scene.layout.AnchorPane;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 import javafx.scene.text.Font;
 
-import java.io.IOException;
+import java.util.Arrays;
 
 public class HelloApplication extends Application {
-    AnchorPane pane;
-    Button botao_inicio;
-    private Button vet[];
+
+    // --- Constantes para Configuração ---
+    private static final int[] NUMEROS_INICIAIS = {4, 2, 8, 6, 1, 5, 9, 3, 7};
+    private static final int TAMANHO_VETOR = NUMEROS_INICIAIS.length;
+    private static final int VELOCIDADE_ANIMACAO_MS = 600;
+    private static final int PAUSA_ENTRE_ETAPAS_MS = 2500;
+    private static final int LARGURA_BOTAO = 40;
+    private static final int ALTURA_BOTAO = 40;
+
+    private static final String[] CORES_RUNS = {
+            "#add8e6", "#f08080", "#90ee90", "#ffdab9", "#dda0dd", "#e0ffff", "#f4a460"
+    };
+
+    // --- Componentes da Interface ---
+    private AnchorPane painelPrincipal;
+    private Button botaoIniciar;
+    private HBox containerBotoes;
+    private Label labelStatus;
+    private Button[] vetBotoes;
+
+    // --- Dados para Ordenação e Animação ---
+    private int[] numeros;
+    private int indiceCorAtual;
+    // CORREÇÃO: Array para rastrear as cores dos botões de forma segura
+    private String[] coresAtuaisDosBotoes;
 
     @Override
-    public void start(Stage stage) throws Exception
-    {
-        stage.setTitle("Pesquisa e Ordenacao");
-        pane = new AnchorPane();
-        botao_inicio = new Button();
-        botao_inicio.setLayoutX(10); botao_inicio.setLayoutY(100);
-        botao_inicio.setText("Inicia...");
-        botao_inicio.setOnAction(e->{ move_botoes();});
-        pane.getChildren().add(botao_inicio);
-        vet = new Button[2];
-        vet[0] = new Button("4");
-        vet[0].setLayoutX(100); vet[0].setLayoutY(200);
-        vet[0].setMinHeight(40); vet[0].setMinWidth(40);
-        vet[0].setFont(new Font(14));
-        pane.getChildren().add(vet[0]);
-        vet[1] = new Button("2");
-        vet[1].setLayoutX(180); vet[1].setLayoutY(200);
-        vet[1].setMinHeight(40); vet[1].setMinWidth(40);
-        vet[1].setFont(new Font(14));
-        pane.getChildren().add(vet[1]);
-        vet[2] = new Button("8");
-        vet[2].setLayoutX(180); vet[1].setLayoutY(200);
-        vet[2].setMinHeight(40); vet[1].setMinWidth(40);
-        vet[2].setFont(new Font(14));
-        pane.getChildren().add(vet[2]);
-        vet[3] = new Button("6");
-        vet[3].setLayoutX(180); vet[1].setLayoutY(200);
-        vet[3].setMinHeight(40); vet[1].setMinWidth(40);
-        vet[3].setFont(new Font(14));
-        pane.getChildren().add(vet[3]);
-        vet[4] = new Button("1");
-        vet[4].setLayoutX(180); vet[1].setLayoutY(200);
-        vet[4].setMinHeight(40); vet[1].setMinWidth(40);
-        vet[4].setFont(new Font(14));
-        pane.getChildren().add(vet[4]);
-        vet[5] = new Button("9");
-        vet[5].setLayoutX(180); vet[1].setLayoutY(200);
-        vet[5].setMinHeight(40); vet[1].setMinWidth(40);
-        vet[5].setFont(new Font(14));
-        pane.getChildren().add(vet[5]);
-        Scene scene = new Scene(pane, 800, 600);
+    public void start(Stage stage) {
+        stage.setTitle("Animação de Ordenação - Tim Sort (Runs Coloridas)");
+        // ... (o resto do método start continua igual)
+        painelPrincipal = new AnchorPane();
+        VBox layoutVertical = new VBox(20);
+        layoutVertical.setAlignment(Pos.CENTER);
+        painelPrincipal.setTopAnchor(layoutVertical, 50.0);
+        painelPrincipal.setLeftAnchor(layoutVertical, 50.0);
+        painelPrincipal.setRightAnchor(layoutVertical, 50.0);
+
+        botaoIniciar = new Button("Iniciar Animação Tim Sort");
+        botaoIniciar.setOnAction(e -> iniciarAnimacaoOrdenacao());
+
+        containerBotoes = new HBox(10);
+        containerBotoes.setAlignment(Pos.CENTER);
+
+        labelStatus = new Label("Pressione 'Iniciar' para começar a ordenação.");
+        labelStatus.setFont(new Font("Arial", 16));
+
+        inicializarVetor();
+
+        layoutVertical.getChildren().addAll(labelStatus, containerBotoes, botaoIniciar);
+        painelPrincipal.getChildren().add(layoutVertical);
+
+        Scene scene = new Scene(painelPrincipal, 800, 400);
         stage.setScene(scene);
         stage.show();
     }
-    public void move_botoes()
-    {
-        Task<Void> task = new Task<Void>(){
+
+    private void inicializarVetor() {
+        numeros = Arrays.copyOf(NUMEROS_INICIAIS, TAMANHO_VETOR);
+        vetBotoes = new Button[TAMANHO_VETOR];
+        // CORREÇÃO: Inicializa o array de rastreamento de cores
+        coresAtuaisDosBotoes = new String[TAMANHO_VETOR];
+        Arrays.fill(coresAtuaisDosBotoes, ""); // Começa sem estilo
+
+        containerBotoes.getChildren().clear();
+
+        for (int i = 0; i < TAMANHO_VETOR; i++) {
+            Button btn = new Button(String.valueOf(numeros[i]));
+            btn.setMinSize(LARGURA_BOTAO, ALTURA_BOTAO);
+            btn.setFont(new Font(14));
+            btn.setStyle("");
+            vetBotoes[i] = btn;
+            containerBotoes.getChildren().add(btn);
+        }
+        atualizarStatusLabel("Vetor Inicial: " + Arrays.toString(NUMEROS_INICIAIS));
+    }
+
+    private void iniciarAnimacaoOrdenacao() {
+        botaoIniciar.setDisable(true);
+        this.indiceCorAtual = 0;
+
+        Task<Void> taskOrdenacao = new Task<>() {
             @Override
             protected Void call() {
-//permutação na tela
-                for (int i = 0; i < 10; i++) {
-                    Platform.runLater(() -> vet[0].setLayoutY(vet[0].getLayoutY() + 5));
-                    Platform.runLater(() -> vet[1].setLayoutY(vet[1].getLayoutY() - 5));
-                    try {
-                        Thread.sleep(50);
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    }
-                }
-                for (int i = 0; i < 16; i++) {
-                    Platform.runLater(() -> vet[0].setLayoutX(vet[0].getLayoutX() + 5));
-                    Platform.runLater(() -> vet[1].setLayoutX(vet[1].getLayoutX() - 5));
-                    try {
-                        Thread.sleep(50);
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    }
-                }
-                for (int i = 0; i < 10; i++) {
-                    Platform.runLater(() -> vet[0].setLayoutY(vet[0].getLayoutY() - 5));
-                    Platform.runLater(() -> vet[1].setLayoutY(vet[1].getLayoutY() + 5));
-                    try {
-                        Thread.sleep(50);
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    }
-                }
-//permutação na memória
-                Button aux = vet[0];
-                vet[0] = vet[1];
-                vet[1] = aux;
+                timSortPorEtapas();
                 return null;
             }
         };
-        Thread thread = new Thread(task);
+
+        taskOrdenacao.setOnSucceeded(e -> {
+            botaoIniciar.setText("Reiniciar Animação");
+            botaoIniciar.setOnAction(ev -> {
+                inicializarVetor();
+                iniciarAnimacaoOrdenacao();
+            });
+            botaoIniciar.setDisable(false);
+        });
+
+        Thread thread = new Thread(taskOrdenacao);
+        thread.setDaemon(true);
         thread.start();
+    }
+
+    public void timSortPorEtapas() {
+        atualizarStatusLabel("Fase 1: Ordenando as 'Runs' com Insertion Sort...");
+        pausarAnimacao(PAUSA_ENTRE_ETAPAS_MS);
+        insertionSort(0, 1); colorirRun(0, 1);
+        insertionSort(2, 3); colorirRun(2, 3);
+        insertionSort(4, 6); colorirRun(4, 6);
+        insertionSort(7, 8); colorirRun(7, 8);
+
+        atualizarStatusLabel("Runs Ordenadas e Coloridas");
+        pausarAnimacao(PAUSA_ENTRE_ETAPAS_MS + 1000);
+
+        atualizarStatusLabel("Fase 2: Juntando (Merge) as runs...");
+        pausarAnimacao(PAUSA_ENTRE_ETAPAS_MS);
+        merge(0, 1, 3); colorirRun(0, 3);
+        merge(4, 6, 8); colorirRun(4, 8);
+
+        atualizarStatusLabel("Runs Juntadas e com Novas Cores");
+        pausarAnimacao(PAUSA_ENTRE_ETAPAS_MS + 1000);
+
+        atualizarStatusLabel("Fase 3: Merge Final...");
+        pausarAnimacao(PAUSA_ENTRE_ETAPAS_MS);
+        merge(0, 3, 8); colorirRun(0, 8);
+
+        atualizarStatusLabel("Ordenação Concluída! Vetor final: " + Arrays.toString(numeros));
+    }
+
+    // CORREÇÃO: Lógica de cores simplificada para evitar problemas
+    private void insertionSort(int left, int right) {
+        for (int i = left + 1; i <= right; i++) {
+            int temp = numeros[i];
+            int j = i - 1;
+            setEstiloBotao(i, "-fx-background-color: orange;"); // Destaque do elemento a ser inserido
+            pausarAnimacao();
+            while (j >= left && numeros[j] > temp) {
+                setEstiloBotao(j, "-fx-background-color: lightcoral;"); // Destaque do elemento sendo movido
+                numeros[j + 1] = numeros[j];
+                atualizaTextoBotao(j + 1, String.valueOf(numeros[j]));
+                pausarAnimacao();
+                setEstiloBotao(j, coresAtuaisDosBotoes[j]); // Restaura a cor anterior (que pode ser a da run ou vazia)
+                j--;
+            }
+            numeros[j + 1] = temp;
+            atualizaTextoBotao(j + 1, String.valueOf(temp));
+            // Limpa os destaques temporários
+            setEstiloBotao(i, coresAtuaisDosBotoes[i]);
+            setEstiloBotao(j + 1, coresAtuaisDosBotoes[j + 1]);
+        }
+    }
+
+    // CORREÇÃO: Removido o `getStyle()` que causava o travamento
+    private void merge(int l, int m, int r) {
+        int len1 = m - l + 1, len2 = r - m;
+        int[] left = new int[len1];
+        int[] right = new int[len2];
+        for (int i = 0; i < len1; i++) left[i] = numeros[l + i];
+        for (int i = 0; i < len2; i++) right[i] = numeros[m + 1 + i];
+
+        int i = 0, j = 0, k = l;
+        while (i < len1 && j < len2) {
+            setEstiloBotao(l + i, "-fx-background-color: yellow; -fx-border-color: black;");
+            setEstiloBotao(m + 1 + j, "-fx-background-color: yellow; -fx-border-color: black;");
+            pausarAnimacao();
+
+            if (left[i] <= right[j]) {
+                numeros[k] = left[i]; i++;
+            } else {
+                numeros[k] = right[j]; j++;
+            }
+
+            // Restaura as cores originais antes de destacar o elemento movido
+            // Usa o array `coresAtuaisDosBotoes` para ler a cor de forma segura
+            if (i > 0) setEstiloBotao(l + i - 1, coresAtuaisDosBotoes[l + i - 1]);
+            if (j > 0) setEstiloBotao(m + j, coresAtuaisDosBotoes[m + j]);
+
+
+            atualizaTextoBotao(k, String.valueOf(numeros[k]));
+            setEstiloBotao(k, "-fx-background-color: pink;");
+            pausarAnimacao();
+            setEstiloBotao(k, coresAtuaisDosBotoes[k]);
+            k++;
+        }
+        while (i < len1) {
+            numeros[k] = left[i]; atualizaTextoBotao(k, String.valueOf(left[i]));
+            setEstiloBotao(k, "-fx-background-color: pink;"); pausarAnimacao(); setEstiloBotao(k, coresAtuaisDosBotoes[k]);
+            i++; k++;
+        }
+        while (j < len2) {
+            numeros[k] = right[j]; atualizaTextoBotao(k, String.valueOf(right[j]));
+            setEstiloBotao(k, "-fx-background-color: pink;"); pausarAnimacao(); setEstiloBotao(k, coresAtuaisDosBotoes[k]);
+            j++; k++;
+        }
+    }
+
+    // CORREÇÃO: Atualiza o array de rastreamento junto com a UI
+    private void colorirRun(int inicio, int fim) {
+        String cor = CORES_RUNS[indiceCorAtual % CORES_RUNS.length];
+        indiceCorAtual++;
+        String estilo = "-fx-background-color: " + cor + ";";
+        for (int i = inicio; i <= fim; i++) {
+            coresAtuaisDosBotoes[i] = estilo; // Atualiza nosso array de rastreamento
+            setEstiloBotao(i, estilo);         // Atualiza o botão na tela
+        }
+    }
+
+    private void pausarAnimacao() { pausarAnimacao(VELOCIDADE_ANIMACAO_MS); }
+    private void pausarAnimacao(int milissegundos) {
+        try { Thread.sleep(milissegundos); } catch (InterruptedException e) { Thread.currentThread().interrupt(); }
+    }
+    private void atualizarStatusLabel(String texto) { Platform.runLater(() -> labelStatus.setText(texto)); }
+    private void setEstiloBotao(int index, String style) {
+        if (index >= 0 && index < vetBotoes.length) { Platform.runLater(() -> vetBotoes[index].setStyle(style)); }
+    }
+    private void atualizaTextoBotao(int index, String texto) {
+        if (index >= 0 && index < vetBotoes.length) { Platform.runLater(() -> vetBotoes[index].setText(texto)); }
     }
 
     public static void main(String[] args) {
