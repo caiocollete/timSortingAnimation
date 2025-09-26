@@ -39,13 +39,12 @@ public class HelloApplication extends Application {
     // --- Dados para Ordenação e Animação ---
     private int[] numeros;
     private int indiceCorAtual;
-    // CORREÇÃO: Array para rastrear as cores dos botões de forma segura
+    // Array para rastrear as cores dos botões de forma segura
     private String[] coresAtuaisDosBotoes;
 
     @Override
     public void start(Stage stage) {
-        stage.setTitle("Animação de Ordenação - Tim Sort (Runs Coloridas)");
-        // ... (o resto do método start continua igual)
+        stage.setTitle("Animação de Ordenação - Tim Sort");
         painelPrincipal = new AnchorPane();
         VBox layoutVertical = new VBox(20);
         layoutVertical.setAlignment(Pos.CENTER);
@@ -144,7 +143,6 @@ public class HelloApplication extends Application {
         atualizarStatusLabel("Ordenação Concluída! Vetor final: " + Arrays.toString(numeros));
     }
 
-    // CORREÇÃO: Lógica de cores simplificada para evitar problemas
     private void insertionSort(int left, int right) {
         for (int i = left + 1; i <= right; i++) {
             int temp = numeros[i];
@@ -167,7 +165,6 @@ public class HelloApplication extends Application {
         }
     }
 
-    // CORREÇÃO: Removido o `getStyle()` que causava o travamento
     private void merge(int l, int m, int r) {
         int len1 = m - l + 1, len2 = r - m;
         int[] left = new int[len1];
@@ -211,7 +208,6 @@ public class HelloApplication extends Application {
         }
     }
 
-    // CORREÇÃO: Atualiza o array de rastreamento junto com a UI
     private void colorirRun(int inicio, int fim) {
         String cor = CORES_RUNS[indiceCorAtual % CORES_RUNS.length];
         indiceCorAtual++;
